@@ -31,8 +31,8 @@
     <symbol id="icon-warn" viewBox="0 0 24 24"><path d="m10.5 4-8 14A1.5 1.5 0 0 0 4 20h16a1.5 1.5 0 0 0 1.5-2l-8-14a1.7 1.7 0 0 0-3 0Z"/><path d="M12 9v4m0 3h.01"/></symbol>
   </svg>
 
-  <div class="layout">
-    <header class="toolbar">
+  <div class="tool-backdrop">
+    <header class="toolbar layout">
       <div class="brand" aria-label="HKID">
         <span class="brand-icon"><svg class="icon" aria-hidden="true"><use href="#icon-card"/></svg></span>
         <span>HKID</span>
@@ -50,7 +50,7 @@
       </a>
     </header>
 
-    <main>
+    <main class="layout">
       <div id="tool-card" class="surface">
         <section id="panel-generate" role="tabpanel" aria-labelledby="tab-generate">
           <h1 data-i18n="sample">Sample Hong Kong ID details</h1>
@@ -149,32 +149,33 @@
         </section>
       </div>
     </main>
-    <footer class="site-stats">
-      <p class="stats-totals" id="stats-totals">
-        <span id="stats-visitors" data-i18n="visitorsPending">Visitors —</span>
-        <span class="stats-separator" aria-hidden="true">·</span>
-        <span id="stats-generated" data-i18n="generatedPending">HKIDs generated —</span>
-        <span class="stats-separator" aria-hidden="true">·</span>
-        <span class="stats-meta">
-          <span id="stats-pending" data-i18n="statsPending">Statistics pending</span>
-          <time id="stats-through" hidden></time>
-          <span aria-hidden="true">|</span>
-          <a class="github-link" href="https://github.com/Wal-N/hkid-web">
-            <svg width="16" height="16" fill="currentColor" aria-hidden="true"><use href="#icon-github"/></svg>
-            <span data-i18n="feedbackLink">Feedback &amp; bug reports</span>
-          </a>
-        </span>
-      </p>
-      <details id="privacy">
-        <summary data-i18n="privacy">Privacy and analytics</summary>
-        <div class="privacy-body">
-          <p data-i18n="privacyLocal">The HKID numbers you enter and the sample card details you generate stay in your browser.</p>
-          <p data-i18n="privacyAnalytics">When enabled, Google Analytics 4 counts visits and successful sample generations, including the first sample on each visit. Google receives connection information such as your IP address and can use cookies and browser identifiers to estimate visitor numbers. The footer shows the totals.</p>
-          <p><a href="https://policies.google.com/technologies/partner-sites" data-i18n="privacyLink">How Google uses data from partner sites</a></p>
-        </div>
-      </details>
-    </footer>
   </div>
+
+  <footer class="site-stats layout">
+    <p class="stats-totals" id="stats-totals">
+      <span id="stats-visitors" data-i18n="visitorsPending">Visitors —</span>
+      <span class="stats-separator" aria-hidden="true">·</span>
+      <span id="stats-generated" data-i18n="generatedPending">HKIDs generated —</span>
+      <span class="stats-separator" aria-hidden="true">·</span>
+      <span class="stats-meta">
+        <span id="stats-pending" data-i18n="statsPending">Statistics pending</span>
+        <time id="stats-through" hidden></time>
+        <span aria-hidden="true">|</span>
+        <a class="github-link" href="https://github.com/Wal-N/hkid-web">
+          <svg width="16" height="16" fill="currentColor" aria-hidden="true"><use href="#icon-github"/></svg>
+          <span data-i18n="feedbackLink">Feedback &amp; bug reports</span>
+        </a>
+      </span>
+    </p>
+    <details id="privacy">
+      <summary data-i18n="privacy">Privacy and analytics</summary>
+      <div class="privacy-body">
+      <p data-i18n="privacyLocal">The HKID numbers you enter and the sample data you generate stay in your browser and are never uploaded.</p>
+      <p data-i18n="privacyAnalytics">This site uses Google Analytics 4 to count page views and generated samples. Google may use cookies to estimate how many people visit.</p>
+        <p><a href="https://policies.google.com/technologies/partner-sites" data-i18n="privacyLink">How Google uses data from partner sites</a></p>
+      </div>
+    </details>
+  </footer>
   <div id="live-feedback" class="sr-only" role="status" aria-atomic="true"></div>
 </body>
 </html>

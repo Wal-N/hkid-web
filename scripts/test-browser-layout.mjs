@@ -166,9 +166,22 @@ export async function checkPortraitFooterContrast(browser, origin) {
         } else {
           assert.ok(await cutoff.isHidden());
         }
-        await page.locator('#privacy summary').click();
         for (const mode of ['generate', 'validate']) {
           await page.locator('#tab-' + mode).click();
+          const layout = await page.locator('footer.site-stats').evaluate(footer => {
+            const card = document.getElementById('tool-card');
+            const style = getComputedStyle(footer);
+            const painted = style.backgroundColor !== 'rgba(0, 0, 0, 0)' || style.backgroundImage !== 'none';
+            return {
+              belowCard: !card.contains(footer) && footer.getBoundingClientRect().top > card.getBoundingClientRect().bottom,
+              roundedBackground: painted && style.borderRadius !== '0px',
+              boxedBorder: ['Top', 'Right', 'Bottom', 'Left'].every(side => parseFloat(style['border' + side + 'Width']) > 0),
+              shadow: style.boxShadow,
+            };
+          });
+          assert.deepEqual(layout, { belowCard: true, roundedBackground: false, boxedBorder: false, shadow: 'none' },
+            `${path} ${mode} ${viewport.width}x${viewport.height} footer placement and appearance`);
+          await page.locator('#privacy summary').click();
           if (mode === 'validate') await page.locator('.github-link').hover();
           const ratios = await measureFooterContrast(page);
           for (const key of ['stats-visitors', 'stats-generated', status, 'feedbackLink', 'privacy',
@@ -176,6 +189,7 @@ export async function checkPortraitFooterContrast(browser, origin) {
             const ratio = ratios[key];
             assert.ok(ratio >= 4.5, `${path} ${mode} ${viewport.width}x${viewport.height} ${key}: ${ratio}:1`);
           }
+          await page.locator('#privacy summary').click();
         }
       }
     } finally {
