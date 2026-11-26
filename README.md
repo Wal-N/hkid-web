@@ -6,7 +6,7 @@ Generate sample Hong Kong identity card (HKID) details and check HKID numbers in
 
 ## Generate a sample
 
-The **Generate** tab opens with a sample HKID number, Chinese and English names, and card details. Select any value to copy it, or select **Regenerate** for another sample. Use generated numbers as test data. A sample may match an issued HKID number.
+The **Generate** tab opens with a sample HKID number, Chinese and English names, and card details. Select any value to copy it, or select **Regenerate** for another sample. This sample is for testing only. The generated details may match those on someone’s real Hong Kong identity card.
 
 ## Check a number
 

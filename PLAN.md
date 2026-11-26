@@ -4,7 +4,7 @@ HKID Web generates one sample Hong Kong identity card at a time and checks the f
 
 ## Generate
 
-**Generate** is the first tab on each fresh page load. Once the WebAssembly (WASM) core is ready, it generates a complete sample using the current Hong Kong calendar date. The HKID number appears first, followed by the Chinese name, English name, date of birth, sex, Chinese commercial codes, card symbols, first registration and date of registration. A full-width holder summary appears below the fields. The sample notice explains that a generated number may match someone’s HKID. **Regenerate** sits below the notice and produces a new sample.
+**Generate** is the first tab on each fresh page load. Once the WebAssembly (WASM) core is ready, it generates a complete sample using the current Hong Kong calendar date. The HKID number appears first, followed by the Chinese name, English name, date of birth, sex, Chinese commercial codes, card symbols, first registration and date of registration. A full-width holder summary appears below the fields. The notice explains that samples are for testing only and that generated details may match those on a real Hong Kong identity card. **Regenerate** sits below the notice and produces a new sample.
 
 | English label | Traditional Chinese label | Printed format | Example copied value |
 | --- | --- | --- | --- |
