@@ -1,0 +1,14 @@
+{
+  "name": "hkid-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/preview.mjs",
+    "build": "node scripts/build-site.mjs",
+    "test": "node --test tests/analytics.test.mjs tests/build.test.mjs tests/core.test.mjs tests/language-pages.test.mjs tests/stats-branch.test.mjs tests/update-stats.test.mjs",
+    "test:browser": "node scripts/test-browser.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

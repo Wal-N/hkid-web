@@ -1,0 +1,16 @@
+export const publicFiles = [
+  'index.html',
+  'zh-hk/index.html',
+  'styles.css',
+  'app.js',
+  'analytics.js',
+  'analytics-config.json',
+  'stats.js',
+  'stats.json',
+  'public/core/api.js',
+  'public/core/hkid_web_core.js',
+  'public/core/hkid_web_core_bg.wasm',
+  'public/core/HKID-UTILS-LICENSE.txt',
+  'public/core/THIRD-PARTY-NOTICES.txt',
+  'public/core/RUST-STDLIB-LICENSES.zip',
+];

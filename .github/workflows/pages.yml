@@ -1,0 +1,72 @@
+name: Test and publish site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+# Hold the lock from the snapshot read through the completed Pages deployment.
+concurrency:
+  group: hkid-site-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PUBLISH_SITE: ${{ github.repository == 'Wal-N/hkid-web' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    outputs:
+      publish: ${{ steps.revision.outputs.current }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: ${{ env.PUBLISH_SITE == 'true' }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm test
+      - name: Build site
+        env:
+          GA4_MEASUREMENT_ID: ${{ vars.GA4_MEASUREMENT_ID }}
+        run: npm run build -- "$RUNNER_TEMP/site"
+      - name: Include the last successful statistics report
+        if: env.PUBLISH_SITE == 'true'
+        run: node scripts/stats-branch.mjs restore "$RUNNER_TEMP/site/stats.json"
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Exercise the built site in all three browser engines
+        run: npm run test:browser -- "$RUNNER_TEMP/site"
+      - name: Check this revision still heads main
+        id: revision
+        if: env.PUBLISH_SITE == 'true'
+        run: |
+          head=$(git ls-remote --exit-code origin refs/heads/main)
+          if [[ "${head%%[[:space:]]*}" == "$GITHUB_SHA" ]]; then
+            echo 'current=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-pages-artifact@v4
+        if: steps.revision.outputs.current == 'true'
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - id: pages
+        uses: actions/deploy-pages@v4

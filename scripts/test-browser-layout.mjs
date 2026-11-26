@@ -1,0 +1,185 @@
+import assert from 'node:assert/strict';
+
+const pagePaths = ['/hkid-web/', '/hkid-web/zh-hk/'];
+
+async function checkFirstPaint(browser, url, width) {
+  const context = await browser.newContext({ viewport: { width, height: 900 } });
+  let releaseWasm;
+  const pending = new Promise(resolve => { releaseWasm = resolve; });
+  try {
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      let score = 0;
+      function add(entries) {
+        for (const entry of entries) if (!entry.hadRecentInput) score += entry.value;
+      }
+      const observer = new PerformanceObserver(list => add(list.getEntries()));
+      observer.observe({ type: 'layout-shift', buffered: true });
+      window.readInitialLayoutShift = () => {
+        add(observer.takeRecords());
+        return score;
+      };
+    });
+    await page.route('**/hkid_web_core_bg.wasm', async route => {
+      await pending;
+      await route.continue();
+    });
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.locator('#core-status').waitFor();
+    assert.ok(await page.locator('#sample-content').evaluate(el => el.inert));
+    // Let the loading layout paint as it would on a slower connection.
+    await page.waitForTimeout(500);
+    releaseWasm();
+    await page.locator('#sample-content:not([inert])').waitFor();
+    const score = await page.evaluate(async () => {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return window.readInitialLayoutShift();
+    });
+    assert.ok(score <= 0.1, `${url} at ${width}px: initial layout shift ${score}`);
+  } finally {
+    releaseWasm();
+    await context.close();
+  }
+}
+
+async function checkLargeText(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 320, height: 900 } });
+  try {
+    const page = await context.newPage();
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Page.setFontSizes', { fontSizes: { standard: 32 } });
+    await page.goto(url);
+    await page.locator('#sample-content:not([inert])').waitFor();
+    const measurements = await page.evaluate(() => {
+      const dates = [...document.querySelectorAll('[data-format]')];
+      const clipped = dates.filter(label => {
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        const field = label.closest('.field').getBoundingClientRect();
+        return [...range.getClientRects()].some(rect => rect.left < field.left - 1 || rect.right > field.right + 1);
+      });
+      const toolbar = document.querySelector('.toolbar').getBoundingClientRect();
+      const switcher = document.querySelector('#locale-switch').getBoundingClientRect();
+      return {
+        font: getComputedStyle(document.documentElement).fontSize, dates: dates.length,
+        clipped: clipped.map(label => label.textContent), switcherFits: switcher.right <= toolbar.right + 1,
+      };
+    });
+    assert.deepEqual(measurements, { font: '32px', dates: 3, clipped: [], switcherFits: true }, url);
+  } finally {
+    await context.close();
+  }
+}
+
+async function checkPrivacyWithoutScripts(browser, url) {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto(url);
+    assert.ok((await page.locator('#generate-status').innerText()).includes('JavaScript'));
+    assert.equal(await page.locator('#core-status').isVisible(), false);
+    await page.locator('#privacy summary').click();
+    assert.match(await page.locator('#privacy').innerText(), /Google Analytics 4/);
+    assert.ok(await page.locator('#privacy a').isVisible());
+  } finally {
+    await context.close();
+  }
+}
+
+export async function checkLayout(browser, origin) {
+  for (const path of pagePaths) {
+    const url = new URL(path, origin).href;
+    for (const width of [390, 1280]) await checkFirstPaint(browser, url, width);
+    await checkLargeText(browser, url);
+    await checkPrivacyWithoutScripts(browser, url);
+  }
+}
+
+async function measureFooterContrast(page) {
+  const footer = page.locator('.site-stats');
+  const labels = '.site-stats :is([data-i18n], #stats-through)';
+  const hideInk = `${labels} { -webkit-text-fill-color: transparent; text-decoration-color: transparent; }`;
+  const capture = async style => (await footer.screenshot({ style, scale: 'css' })).toString('base64');
+  // Paint a solid swatch of each label's text color in the second capture.
+  // Sampling the same position avoids antialiasing and includes the real backdrop.
+  const background = await capture(hideInk);
+  const foreground = await capture(hideInk + `${labels} { background: currentColor !important; }`);
+  return footer.evaluate(async (root, { labels, background, foreground }) => {
+    async function pixels(encoded) {
+      const image = new Image();
+      image.src = 'data:image/png;base64,' + encoded;
+      await image.decode();
+      const ctx = new OffscreenCanvas(image.width, image.height).getContext('2d');
+      ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, image.width, image.height);
+    }
+    const [bg, fg] = await Promise.all([pixels(background), pixels(foreground)]);
+    const origin = root.getBoundingClientRect();
+    function luminance(image, x, y) {
+      const offset = 4 * (image.width * y + x);
+      const [r, g, b] = Array.from(image.data.slice(offset, offset + 3), byte => {
+        const c = byte / 255;
+        return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * r + .7152 * g + .0722 * b;
+    }
+    const ratios = {};
+    for (const label of root.querySelectorAll(labels)) {
+      const range = document.createRange();
+      range.selectNodeContents(label);
+      const key = label.id || label.dataset.i18n;
+      for (const rect of range.getClientRects()) {
+        if (!rect.width || !rect.height) continue;
+        const x = Math.floor(rect.left + rect.width / 2 - origin.left);
+        for (const inset of [1, rect.height / 2, rect.height - 1]) {
+          const y = Math.floor(rect.top + inset - origin.top);
+          const a = luminance(bg, x, y);
+          const b = luminance(fg, x, y);
+          const ratio = (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+          ratios[key] = Math.min(ratios[key] ?? Infinity, ratio);
+        }
+      }
+    }
+    return ratios;
+  }, { labels, background, foreground });
+}
+
+export async function checkPortraitFooterContrast(browser, origin) {
+  for (const viewport of [{ width: 900, height: 1600 }, { width: 1440, height: 2560 }]) {
+    const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
+    try {
+      const page = await context.newPage();
+      for (const path of pagePaths) {
+        // Exercise both footer messages even if the built artifact already contains live counts.
+        const published = viewport.width === 1440;
+        await page.route('**/stats.json', route => route.fulfill({
+          json: published ? { visitors: 42, generated: 123, through: '2026-11-24' } : {},
+        }), { times: 1 });
+        await page.goto(new URL(path, origin).href);
+        await page.locator('#sample-content:not([inert])').waitFor();
+        const status = published ? 'stats-through' : 'stats-pending';
+        await page.locator('#' + status).waitFor();
+        const cutoff = page.locator('#stats-through');
+        if (published) {
+          assert.equal(await cutoff.getAttribute('datetime'), '2026-11-24');
+          assert.match(await cutoff.innerText(), path === pagePaths[0] ? /recent counts may change/ : /近期數字或會調整/);
+        } else {
+          assert.ok(await cutoff.isHidden());
+        }
+        await page.locator('#privacy summary').click();
+        for (const mode of ['generate', 'validate']) {
+          await page.locator('#tab-' + mode).click();
+          if (mode === 'validate') await page.locator('.github-link').hover();
+          const ratios = await measureFooterContrast(page);
+          for (const key of ['stats-visitors', 'stats-generated', status, 'feedbackLink', 'privacy',
+            'privacyLocal', 'privacyAnalytics', 'privacyLink']) {
+            const ratio = ratios[key];
+            assert.ok(ratio >= 4.5, `${path} ${mode} ${viewport.width}x${viewport.height} ${key}: ${ratio}:1`);
+          }
+        }
+      }
+    } finally {
+      await context.close();
+    }
+  }
+}

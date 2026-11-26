@@ -1,0 +1,21 @@
+[package]
+name = "hkid-web-core"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.100"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+chrono = { version = "0.4", default-features = false }
+hkid-utils = "=1.2.0"
+serde_json = "1"
+wasm-bindgen = "=0.2.130"
+
+[profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1
+strip = "debuginfo"

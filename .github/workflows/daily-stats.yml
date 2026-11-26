@@ -1,0 +1,94 @@
+name: Update daily usage statistics
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *' # 10:17 Hong Kong time
+
+permissions: {}
+
+concurrency:
+  group: hkid-daily-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    if: >-
+      github.repository == 'Wal-N/hkid-web' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || vars.GA4_PROPERTY_ID != '')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GA4_MEASUREMENT_ID: ${{ vars.GA4_MEASUREMENT_ID }}
+      GA4_START_DATE: ${{ vars.GA4_START_DATE }}
+      GA4_PROPERTY_ID: ${{ vars.GA4_PROPERTY_ID }}
+      GA4_HOSTNAME: wal-n.github.io
+      GA4_PAGE_PATH: /hkid-web/
+    outputs:
+      totals: ${{ steps.refresh.outputs.totals }}
+      started_at: ${{ steps.refresh.outputs.started_at }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Check report settings
+        env:
+          GA4_WIF_PROVIDER: ${{ vars.GA4_WIF_PROVIDER }}
+          GA4_SERVICE_ACCOUNT: ${{ vars.GA4_SERVICE_ACCOUNT }}
+        run: |
+          node scripts/measurement-id.mjs
+          for name in GA4_START_DATE GA4_PROPERTY_ID GA4_WIF_PROVIDER GA4_SERVICE_ACCOUNT; do
+            if [[ -z "${!name}" ]]; then echo "::error::Set repository variable $name"; exit 1; fi
+          done
+      - name: Get read-only Analytics access
+        id: google
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GA4_WIF_PROVIDER }}
+          service_account: ${{ vars.GA4_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/analytics.readonly
+          create_credentials_file: false
+          export_environment_variables: false
+      - name: Fetch aggregate counts
+        id: refresh
+        env:
+          GA4_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: |
+          started_at=$(date -u +'%Y-%m-%dT%H:%M:%S.%3NZ')
+          node scripts/update-stats.mjs "$RUNNER_TEMP/stats.json"
+          echo "started_at=$started_at" >> "$GITHUB_OUTPUT"
+          echo "totals=$(cat "$RUNNER_TEMP/stats.json")" >> "$GITHUB_OUTPUT"
+
+  store:
+    needs: report
+    if: needs.report.outputs.totals != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      updated: ${{ steps.snapshot.outputs.updated }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Store public totals on the usage-stats branch
+        id: snapshot
+        env:
+          TOTALS: ${{ needs.report.outputs.totals }}
+          GA4_REPORT_STARTED_AT: ${{ needs.report.outputs.started_at }}
+        run: |
+          updated=$(printf '%s' "$TOTALS" | node scripts/stats-branch.mjs store)
+          echo "updated=$updated" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: store
+    if: needs.store.outputs.updated == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Publish the new report with the latest version of the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref main
