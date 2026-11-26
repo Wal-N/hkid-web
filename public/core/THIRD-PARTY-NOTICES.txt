@@ -31,7 +31,7 @@ futures-core 0.3.34    MIT OR Apache-2.0
 futures-task 0.3.34    MIT OR Apache-2.0
 futures-util 0.3.34    MIT OR Apache-2.0
 getrandom 0.4.3    MIT OR Apache-2.0
-hkid-utils 1.2.0    MIT
+hkid-utils 1.2.1    MIT
 itoa 1.0.19    MIT OR Apache-2.0
 js-sys 0.3.107    MIT OR Apache-2.0
 memchr 2.8.3    Unlicense OR MIT
@@ -1054,7 +1054,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-hkid-utils 1.2.0 / LICENSE
+hkid-utils 1.2.1 / LICENSE
 
 MIT License
 

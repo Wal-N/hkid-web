@@ -1,7 +1,7 @@
 # Browser core
 
 The local site serves the prebuilt files in `public/core/`. HKID Utilities
-1.2.0 performs the generation, strict validation, card formatting and holder
+1.2.1 performs the generation, strict validation, card formatting and holder
 summaries in the browser. The adapter receives a Hong Kong reference date and
 seeds each generated card using the browser's Web Crypto API.
 

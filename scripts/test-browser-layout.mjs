@@ -154,6 +154,14 @@ export async function checkPrivacyMotion(browser, origin) {
     assert.equal(closedAgain, closed, 'Reduced motion collapses the disclosure immediately');
 
     await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await summary.scrollIntoViewIfNeeded();
+    // Resolve the normal-motion style and check that the site enables the transition.
+    const duration = await details.evaluate(element => getComputedStyle(element, '::details-content').transitionDuration);
+    assert.ok(parseFloat(duration) > 0, 'Normal motion animates the disclosure');
+    // Give slower runners time to sample the middle of the real CSS transition.
+    await page.addStyleTag({ content: '#privacy::details-content { --privacy-duration: 1s; }' });
+    expect(await details.evaluate(element => element.getBoundingClientRect().height)).toBeCloseTo(closed, 1);
+
     async function toggle(key, expectedHeight, reverse = false) {
       await Promise.all([
         page.waitForFunction(({ closed, open, reverse }) => {
