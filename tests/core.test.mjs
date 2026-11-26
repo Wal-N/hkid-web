@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { before, mock, test } from 'node:test';
 import { loadCore, generateCard, validateNumber } from '../public/core/api.js';
 
-// Unmodified conformance/hkid-number.json from the hkid-utils 1.2.0 release.
+// Unmodified conformance/hkid-number.json from the hkid-utils 1.2.1 release.
 const vectors = JSON.parse(await readFile(new URL('./fixtures/hkid-number.json', import.meta.url), 'utf8'));
 
 before(async () => {
@@ -47,5 +47,8 @@ test('generated samples contain printable card fields and a summary in both lang
     assert.ok(card.symbols.length > 0);
     assert.match(card.summaries.en, /holder/i);
     assert.match(card.summaries['zh-HK'], /持有人/);
+    const female = card.sex === '女 F';
+    assert.match(card.summaries.en, female ? /\bShe has the right of abode/ : /\bHe has the right of abode/);
+    assert.match(card.summaries['zh-HK'], female ? /她享有香港居留權/ : /他享有香港居留權/);
   }
 });

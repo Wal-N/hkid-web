@@ -112,9 +112,9 @@ dependencies = [
 
 [[package]]
 name = "hkid-utils"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8398dd4072c4139288550c6be6eafd4ce6d7aac62e95e168d7dbfbf234b69e36"
+checksum = "52bc51c1a4a0baded787be880a76ac532f241d6a9e2f131fced8963ac1dfea61"
 dependencies = [
  "chrono",
  "fastrand",
