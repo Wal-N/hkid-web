@@ -154,9 +154,26 @@ export async function checkPrivacyMotion(browser, origin) {
     assert.equal(closedAgain, closed, 'Reduced motion collapses the disclosure immediately');
 
     await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await details.evaluate(element => {
+      const samples = [];
+      const start = performance.now();
+      const record = event => {
+        const css = getComputedStyle(element, '::details-content');
+        samples.push([Math.round(performance.now() - start), event, element.open,
+          element.getBoundingClientRect().height, css.gridTemplateRows, css.transitionDuration,
+          matchMedia('(prefers-reduced-motion: no-preference)').matches,
+          document.activeElement.tagName]);
+      };
+      for (const type of ['keydown', 'click', 'toggle', 'transitionrun', 'transitionstart', 'transitionend']) {
+        element.addEventListener(type, () => record(type));
+      }
+      window.privacyMotionSamples = samples;
+      window.recordPrivacyFrame = () => { if (samples.length < 35) record('frame'); };
+    });
     async function toggle(key, expectedHeight, reverse = false) {
       await Promise.all([
         page.waitForFunction(({ closed, open, reverse }) => {
+          window.recordPrivacyFrame();
           const details = document.querySelector('#privacy');
           const progress = (details.getBoundingClientRect().height - closed) / (open - closed);
           if (progress < 0.25 || progress > 0.75) return false;
@@ -169,7 +186,10 @@ export async function checkPrivacyMotion(browser, origin) {
           return true;
         }, { closed, open, reverse }, { timeout: 3000 }),
         summary.press(key),
-      ]);
+      ]).catch(async error => {
+        console.error('Disclosure motion', { key, closed, open, samples: await page.evaluate(() => window.privacyMotionSamples) });
+        throw error;
+      });
       await expect.poll(() => details.evaluate(element => element.getBoundingClientRect().height)).toBeCloseTo(expectedHeight, 1);
       await expect(details).toHaveJSProperty('open', expectedHeight === open);
     }
