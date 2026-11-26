@@ -14,4 +14,8 @@ Open **Validate**, enter an HKID number and select **Check**. A successful check
 
 ## Privacy and usage statistics
 
-Entered numbers and generated card details stay in your browser. The footer shows estimated visitors and how many samples Google Analytics has counted, including the automatic sample on each page load. The totals refresh daily and may change as recent events are processed.
+The site checks HKID numbers and generates samples in your browser. It does not upload the numbers you enter, your validation results or any generated sample details, including HKID numbers, names and dates of birth.
+
+Google Analytics 4 (GA4) records a page view (`page_view`) when the page loads and a generation event (`hkid_generated`) each time a sample is created, including the automatic first sample. GA4 also receives browser information such as language and screen resolution. It may use cookies to estimate how many people visit. [How Google Analytics collects data](https://support.google.com/analytics/answer/11593727?hl=en)
+
+The footer shows the estimated number of visitors and how many samples GA4 has counted. The totals refresh daily and may lag behind while GA4 processes recent events.

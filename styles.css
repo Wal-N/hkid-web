@@ -227,6 +227,8 @@ body[data-mode="validate"] .tabs { --glass-edge: 100%; }
 .tab[aria-selected="true"] {
   color: hsl(var(--hue) 75% 19%);
   font-weight: 700;
+}
+.tabs:not([data-sliding]) .tab[aria-selected="true"] {
   background-image: var(--face-shine);
 }
 #tab-generate[aria-selected="false"] { color: #174b9f; }
@@ -250,7 +252,7 @@ body[data-mode="validate"] .tabs { --glass-edge: 100%; }
 .glass-button:disabled { background-image: var(--glass-body); }
 .glass-button > *, .number-card > * { pointer-events: none; }
 @supports (mask-composite: exclude) {
-  .glass-button:not(:disabled)::after, .number-card::after, .tab[aria-selected="true"]::after {
+  .glass-button:not(:disabled)::after, .number-card::after, .tabs:not([data-sliding]) .tab[aria-selected="true"]::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -299,9 +301,28 @@ main { margin-top: 21px; }
   text-decoration: underline;
   text-underline-offset: .18em;
 }
-.privacy-body { text-align: start; }
+.privacy-body { display: flow-root; text-align: start; }
 .privacy-body p { margin-block: .6em; }
 .privacy-body a { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) {
+  #privacy::details-content {
+    --privacy-duration: 220ms;
+    display: grid;
+    grid-template-rows: 0fr;
+    overflow: clip;
+    /* Keep the text in layout until the closing row finishes shrinking. */
+    content-visibility: visible;
+    visibility: hidden;
+    transition: grid-template-rows var(--privacy-duration) ease-out, visibility 0s linear var(--privacy-duration);
+  }
+  #privacy[open]::details-content {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .privacy-body { min-block-size: 0; }
+  #privacy:not([open]) .privacy-body { interactivity: inert; }
+}
 @media (max-width: 36rem) {
   .stats-totals { column-gap: .875rem; }
   .stats-separator { display: none; }
@@ -538,7 +559,8 @@ main { margin-top: 21px; }
 
 @media (hover: hover) {
   .field:hover, .summary:hover { border-color: #9cb8db; background: #fff; }
-  .action:hover:not(:disabled, .glass-button), .tab:where([aria-selected="true"]):hover { filter: brightness(1.04); }
+  .action:hover:not(:disabled, .glass-button),
+  :where(.tabs:not([data-sliding])) .tab:where([aria-selected="true"]):hover { filter: brightness(1.04); }
 }
 @media (min-width: 43.75em) and (max-width: 58.75em) {
   .layout { width: 94%; }

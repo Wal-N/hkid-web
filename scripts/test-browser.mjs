@@ -5,7 +5,7 @@ import { after, before, test } from 'node:test';
 import { chromium, firefox, webkit } from 'playwright';
 import { expect } from 'playwright/test';
 import { createPreviewServer } from './preview.mjs';
-import { checkLayout, checkPortraitFooterContrast } from './test-browser-layout.mjs';
+import { checkLayout, checkPortraitFooterContrast, checkPrivacyMotion, checkTabHoverDuringSlide } from './test-browser-layout.mjs';
 
 const site = createPreviewServer(resolve(process.argv[2] || 'dist'));
 let origin;
@@ -111,6 +111,8 @@ for (const engine of [chromium, firefox, webkit]) {
       const other = entries.find(candidate => candidate !== entry);
       await t.test(entry.lang + ' generation, validation, copy and navigation', () => exerciseTools(browser, entry, other));
     }
+    await t.test('hover shine waits for the moving tab to arrive', () => checkTabHoverDuringSlide(browser, origin));
+    await t.test('privacy disclosure animates in both directions and respects reduced motion', () => checkPrivacyMotion(browser, origin));
     if (engine === chromium) {
       await t.test('initial layout, enlarged text and privacy disclosure', () => checkLayout(browser, origin));
       await t.test('portrait footer text meets 4.5:1 contrast in both tools and languages', () => checkPortraitFooterContrast(browser, origin));

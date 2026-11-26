@@ -1,6 +1,55 @@
 import assert from 'node:assert/strict';
+import { expect } from 'playwright/test';
 
 const pagePaths = ['/hkid-web/', '/hkid-web/zh-hk/'];
+
+function tabShine(tab) {
+  return tab.evaluate(button => {
+    const face = getComputedStyle(button);
+    const rim = getComputedStyle(button, '::after');
+    const tracking = parseFloat(face.getPropertyValue('--shine-x')) >= 0;
+    return {
+      face: tracking && face.backgroundImage !== 'none',
+      rim: tracking && rim.content !== 'none' && rim.display !== 'none' && rim.backgroundImage !== 'none',
+      brightened: face.filter !== 'none',
+    };
+  });
+}
+
+export async function checkTabHoverDuringSlide(browser, origin) {
+  const page = await browser.newPage({ reducedMotion: 'no-preference' });
+  try {
+    await page.goto(new URL(pagePaths[0], origin).href);
+    await page.locator('#sample-content:not([inert])').waitFor();
+    // Stretch the real transition so the mouse can enter before the glass arrives.
+    await page.addStyleTag({ content: '.tabs { --tab-slide: 2s linear; }' });
+    const generate = page.locator('#tab-generate');
+    const validate = page.locator('#tab-validate');
+    const lit = { face: true, rim: true, brightened: true };
+
+    async function switchAndHover(tab, min, max) {
+      await tab.click();
+      await page.mouse.move(0, 0);
+      await tab.hover({ position: { x: 22, y: 3 } });
+      await page.waitForFunction(([min, max]) => {
+        const tabs = document.querySelector('.tabs');
+        const glass = getComputedStyle(tabs, '::after').transform;
+        const offset = new DOMMatrixReadOnly(glass).m41 / tabs.querySelector('.tab').getBoundingClientRect().width;
+        return offset > min && offset < max;
+      }, [min, max]);
+      assert.deepEqual(await tabShine(tab), { face: false, rim: false, brightened: false });
+    }
+
+    await switchAndHover(validate, .4, .6);
+    await expect.poll(() => tabShine(validate)).toEqual(lit);
+    await switchAndHover(generate, .4, .6);
+    // Reverse mid-slide. Completion of the previous trip must not expose the new tab.
+    await switchAndHover(validate, .7, .85);
+    await expect.poll(() => tabShine(validate)).toEqual(lit);
+  } finally {
+    await page.close();
+  }
+}
 
 async function checkFirstPaint(browser, url, width) {
   const context = await browser.newContext({ viewport: { width, height: 900 } });
@@ -83,6 +132,52 @@ async function checkPrivacyWithoutScripts(browser, url) {
     assert.ok(await page.locator('#privacy a').isVisible());
   } finally {
     await context.close();
+  }
+}
+
+export async function checkPrivacyMotion(browser, origin) {
+  const page = await browser.newPage({ reducedMotion: 'reduce', viewport: { width: 390, height: 900 } });
+  try {
+    await page.goto(new URL(pagePaths[1], origin).href);
+    const details = page.locator('#privacy');
+    const summary = details.locator('summary');
+    const { closed, open, closedAgain } = await details.evaluate(element => {
+      const summary = element.querySelector('summary');
+      const height = () => element.getBoundingClientRect().height;
+      const closed = height();
+      summary.click();
+      const open = height();
+      summary.click();
+      return { closed, open, closedAgain: height() };
+    });
+    assert.ok(open > closed + 2, 'Reduced motion expands the disclosure immediately');
+    assert.equal(closedAgain, closed, 'Reduced motion collapses the disclosure immediately');
+
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    async function toggle(key, expectedHeight, reverse = false) {
+      await Promise.all([
+        page.waitForFunction(({ closed, open, reverse }) => {
+          const details = document.querySelector('#privacy');
+          const progress = (details.getBoundingClientRect().height - closed) / (open - closed);
+          if (progress < 0.25 || progress > 0.75) return false;
+          if (!details.open) {
+            const link = details.querySelector('a');
+            link.focus({ preventScroll: true });
+            if (document.activeElement === link) throw new Error('A closing disclosure link took focus');
+          }
+          if (reverse) details.querySelector('summary').click();
+          return true;
+        }, { closed, open, reverse }, { timeout: 3000 }),
+        summary.press(key),
+      ]);
+      await expect.poll(() => details.evaluate(element => element.getBoundingClientRect().height)).toBeCloseTo(expectedHeight, 1);
+      await expect(details).toHaveJSProperty('open', expectedHeight === open);
+    }
+    await toggle('Enter', open);
+    await toggle('Space', closed);
+    await toggle('Enter', closed, true);
+  } finally {
+    await page.close();
   }
 }
 

@@ -88,6 +88,7 @@ let copySequence = 0;
 let feedbackTimeout;
 let copyFade;
 let cardResize;
+let tabSlide;
 let refreshAngle = 0;
 const t = key => messages[locale][key];
 
@@ -212,15 +213,26 @@ function selectMode(next) {
     byId(`panel-${name}`).hidden = !selected;
   }
   renderControls();
+  if (switching) {
+    tabSlide = tabList.getAnimations?.({ subtree: true }).find(animation =>
+      animation.transitionProperty === 'transform' || animation.transitionProperty === 'clip-path');
+    tabList.toggleAttribute('data-sliding', Boolean(tabSlide));
+    if (tabSlide) {
+      const currentSlide = tabSlide;
+      const restoreShine = () => {
+        // A reversal can start a new slide before the cancelled one settles.
+        if (currentSlide === tabSlide) tabList.removeAttribute('data-sliding');
+      };
+      tabSlide.finished.then(restoreShine, restoreShine);
+    }
+  }
   if (fromHeight) {
     const toHeight = toolCard.getBoundingClientRect().height;
     if (toHeight && toHeight !== fromHeight) {
       const endHeight = CSS.supports('interpolate-size', 'allow-keywords') ? 'auto' : `${toHeight}px`;
       // CSS shortens an interrupted slide. Use its actual duration for the card too.
-      const slide = tabList.getAnimations?.({ subtree: true }).find(animation =>
-        animation.transitionProperty === 'transform' || animation.transitionProperty === 'clip-path');
       const glass = getComputedStyle(tabList, '::before');
-      const duration = slide?.effect.getTiming().duration ?? parseFloat(glass.transitionDuration) * 1000;
+      const duration = tabSlide?.effect.getTiming().duration ?? parseFloat(glass.transitionDuration) * 1000;
       cardResize = toolCard.animate?.([{ height: `${fromHeight}px` }, { height: endHeight }],
         { duration, easing: glass.transitionTimingFunction });
     }
@@ -333,6 +345,11 @@ localeSwitch.addEventListener('click', event => {
   syncLocaleWithUrl();
 });
 window.addEventListener('popstate', syncLocaleWithUrl);
+const privacy = byId('privacy');
+privacy.addEventListener('toggle', () => {
+  // Keep the link out of keyboard navigation while the closing text is still visible.
+  privacy.querySelector('.privacy-body').inert = !privacy.open;
+});
 for (const name of modes) {
   const tab = byId(`tab-${name}`);
   const refractedFace = tab.querySelector('.tab-face').cloneNode(true);
