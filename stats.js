@@ -39,9 +39,8 @@ export function renderStats(locale) {
     day: 'numeric', month: english ? 'short' : 'long', year: 'numeric', timeZone: 'UTC',
   }).format(new Date(snapshot.through + 'T00:00:00Z'));
   cutoff.dateTime = snapshot.through;
-  cutoff.textContent = english
-    ? `Through ${date} (recent counts may change)`
-    : `統計至 ${date}（近期數字或會調整）`;
+  cutoff.textContent = english ? `Through ${date}` : `統計至 ${date}`;
+  cutoff.title = english ? 'These figures update after a delay.' : '統計數字會延遲更新。';
 }
 
 export async function loadStats() {

@@ -162,7 +162,9 @@ export async function checkPortraitFooterContrast(browser, origin) {
         const cutoff = page.locator('#stats-through');
         if (published) {
           assert.equal(await cutoff.getAttribute('datetime'), '2026-11-24');
-          assert.match(await cutoff.innerText(), path === pagePaths[0] ? /recent counts may change/ : /近期數字或會調整/);
+          const english = path === pagePaths[0];
+          assert.match(await cutoff.innerText(), english ? /^Through 24\s+\S+\s+2026$/ : /^統計至\s*2026年\s*11月\s*24日$/);
+          assert.equal(await cutoff.getAttribute('title'), english ? 'These figures update after a delay.' : '統計數字會延遲更新。');
         } else {
           assert.ok(await cutoff.isHidden());
         }
