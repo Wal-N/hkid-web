@@ -267,7 +267,9 @@ export async function checkPortraitFooterContrast(browser, origin) {
           assert.equal(await cutoff.getAttribute('datetime'), '2026-11-24');
           const english = path === pagePaths[0];
           assert.match(await cutoff.innerText(), english ? /^Through 24\s+\S+\s+2026$/ : /^統計至\s*2026年\s*11月\s*24日$/);
-          assert.equal(await cutoff.getAttribute('title'), english ? 'These figures update after a delay.' : '統計數字會延遲更新。');
+          const tooltip = await cutoff.getAttribute('title');
+          assert.match(tooltip, english ? /Google Analytics may still be processing/ : /Google Analytics 處理數據需時/);
+          assert.match(tooltip, english ? /every hour/ : /每小時/);
         } else {
           assert.ok(await cutoff.isHidden());
         }

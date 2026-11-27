@@ -40,7 +40,9 @@ export function renderStats(locale) {
   }).format(new Date(snapshot.through + 'T00:00:00Z'));
   cutoff.dateTime = snapshot.through;
   cutoff.textContent = english ? `Through ${date}` : `統計至 ${date}`;
-  cutoff.title = english ? 'These figures update after a delay.' : '統計數字會延遲更新。';
+  cutoff.title = english
+    ? 'Google Analytics may still be processing recent visits and HKID generation events. This site checks for updated totals every hour.'
+    : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。本網站每小時查詢一次最新統計。';
 }
 
 export async function loadStats() {
