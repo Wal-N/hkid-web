@@ -51,6 +51,8 @@ async function exerciseTools(browser, entry, other) {
     const sample = await number.textContent();
     const initialSummary = await summary.textContent();
     await expect(page.locator('html')).toHaveAttribute('lang', entry.lang);
+    // Safari can use the solid page background behind its bottom controls.
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(248, 250, 252)');
     await page.waitForLoadState('networkidle');
     const initialRequests = requests.length;
     const buttons = page.locator('[data-copy]');
@@ -63,6 +65,7 @@ async function exerciseTools(browser, entry, other) {
     }
 
     await page.locator('#tab-validate').click();
+    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(248, 251, 250)');
     const input = page.locator('#number-input');
     const result = page.locator('#validation-result');
     for (const [raw, status, detail] of [

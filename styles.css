@@ -1,6 +1,7 @@
 :root {
   font-family: "Segoe UI", "Noto Sans HK", "PingFang HK", "Microsoft JhengHei", system-ui, sans-serif;
   color: #13263b;
+  background: #f8fafc;
   font-synthesis: none;
   color-scheme: light;
   scrollbar-gutter: stable;
@@ -21,9 +22,7 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   padding-bottom: max(54px, env(safe-area-inset-bottom, 0px));
-  /* Match the canvas above the scroll origin to the start of the gradient. */
-  background-color: var(--back-top);
-  background-image: linear-gradient(var(--back-base), var(--back-base));
+  background-color: var(--back-base);
   -webkit-text-size-adjust: 100%;
 }
 
