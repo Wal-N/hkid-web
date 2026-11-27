@@ -345,6 +345,16 @@ localeSwitch.addEventListener('click', event => {
   syncLocaleWithUrl();
 });
 window.addEventListener('popstate', syncLocaleWithUrl);
+
+const topEdge = byId('top-edge');
+function syncTopEdge() {
+  // Remove the sampled edge as soon as content scrolls under Safari's status bar.
+  topEdge.toggleAttribute('hidden', window.scrollY > 0);
+}
+syncTopEdge();
+window.addEventListener('scroll', syncTopEdge, { passive: true });
+window.addEventListener('pageshow', syncTopEdge);
+
 const privacy = byId('privacy');
 privacy.addEventListener('toggle', () => {
   // Keep the link out of keyboard navigation while the closing text is still visible.

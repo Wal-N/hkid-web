@@ -1,7 +1,40 @@
 import assert from 'node:assert/strict';
-import { expect } from 'playwright/test';
+import { devices, expect } from 'playwright/test';
 
 const pagePaths = ['/hkid-web/', '/hkid-web/zh-hk/'];
+
+export async function checkMobileTopEdge(browser, origin) {
+  const page = await browser.newPage({ ...devices['iPhone 15'], reducedMotion: 'reduce' });
+  try {
+    const edge = page.locator('#top-edge');
+    const body = page.locator('body');
+    for (const path of pagePaths) {
+      await page.goto(new URL(path, origin).href);
+      await page.locator('#sample-content:not([inert])').waitFor();
+      await expect(edge).toBeVisible();
+      await expect(edge).toHaveCSS('position', 'fixed');
+      await expect(edge).toHaveCSS('background-color', 'rgb(61, 106, 175)');
+      await expect(body).toHaveCSS('background-color', 'rgb(248, 250, 252)');
+      assert.ok(await edge.evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.top === 0 && rect.left === 0 && rect.right === innerWidth;
+      }), `${path} top edge spans the viewport`);
+
+      await page.evaluate(() => window.scrollTo(0, 1));
+      await expect(edge).toBeHidden();
+      assert.equal(await page.evaluate(() => document.scrollingElement.scrollTop), 1);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await expect(edge).toBeVisible();
+
+      await page.locator('#tab-validate').tap();
+      await expect(edge).toBeVisible();
+      await expect(edge).toHaveCSS('background-color', 'rgb(54, 124, 94)');
+      await expect(body).toHaveCSS('background-color', 'rgb(248, 251, 250)');
+    }
+  } finally {
+    await page.close();
+  }
+}
 
 function tabShine(tab) {
   return tab.evaluate(button => {

@@ -36,6 +36,20 @@ body[data-mode="validate"] {
   --back-base: #f8fbfa;
 }
 
+#top-edge { display: none; }
+@media (pointer: coarse) and (scripting: enabled) {
+  /* Give Safari a top colour at rest, independently of the light page canvas. */
+  #top-edge {
+    display: block;
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 1;
+    height: 12px;
+    background-color: var(--back-top);
+    pointer-events: none;
+  }
+}
+
 button, input { color: inherit; font: inherit; }
 button {
   margin: 0;
