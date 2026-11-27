@@ -14,25 +14,13 @@ export function renderStats(locale) {
   const english = locale === 'en';
   const visitorsLabel = document.getElementById('stats-visitors');
   const generatedLabel = document.getElementById('stats-generated');
-  const pending = document.getElementById('stats-pending');
-  pending.textContent = english ? 'Statistics pending' : '統計待更新';
-  pending.hidden = snapshot !== null;
-  if (!snapshot) {
-    visitorsLabel.textContent = english ? 'Visitors —' : '累計訪客 —';
-    generatedLabel.textContent = english ? 'HKIDs generated —' : '已生成 HKID —';
-    return;
-  }
-
   const number = new Intl.NumberFormat(locale);
-  const visitors = number.format(snapshot.visitors);
-  const generated = number.format(snapshot.generated);
-  visitorsLabel.textContent = english
-    ? `About ${visitors} ${snapshot.visitors === 1 ? 'visitor' : 'visitors'}`
-    : `累計訪客約 ${visitors} 人`;
-  generatedLabel.textContent = english
-    ? `${generated} ${snapshot.generated === 1 ? 'HKID' : 'HKIDs'} generated`
-    : `已生成 ${generated} 筆 HKID`;
+  const visitors = snapshot ? number.format(snapshot.visitors) : '—';
+  const generated = snapshot ? number.format(snapshot.generated) : '—';
+  visitorsLabel.textContent = english ? `Visitors: ${visitors}` : `累計訪客 ${visitors} 人`;
+  generatedLabel.textContent = english ? `HKIDs generated: ${generated}` : `已生成 ${generated} 筆 HKID`;
 
+  if (!snapshot) return;
   const delayNotice = english
     ? 'Google Analytics takes time to process data, so these totals may not yet include recent activity.'
     : 'Google Analytics 處理數據需時，最近的統計數據可能尚未計入。';

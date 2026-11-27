@@ -120,13 +120,20 @@ async function checkLargeText(browser, url) {
   }
 }
 
-async function checkPrivacyWithoutScripts(browser, url) {
+async function expectFooterCounts(page, english, visitors, generated) {
+  await expect(page.locator('#stats-visitors')).toHaveText(english ? `Visitors: ${visitors}` : `累計訪客 ${visitors} 人`);
+  await expect(page.locator('#stats-generated')).toHaveText(english ? `HKIDs generated: ${generated}` : `已生成 ${generated} 筆 HKID`);
+  await expect(page.locator('#stats-totals')).not.toContainText(/Statistics pending|統計待更新/);
+}
+
+async function checkPageWithoutScripts(browser, url) {
   const context = await browser.newContext({ javaScriptEnabled: false });
   try {
     const page = await context.newPage();
     await page.goto(url);
     assert.ok((await page.locator('#generate-status').innerText()).includes('JavaScript'));
     assert.equal(await page.locator('#core-status').isVisible(), false);
+    await expectFooterCounts(page, new URL(url).pathname === pagePaths[0], '—', '—');
     await page.locator('#privacy summary').click();
     assert.match(await page.locator('#privacy').innerText(), /Google Analytics 4/);
     assert.ok(await page.locator('#privacy a').isVisible());
@@ -194,7 +201,7 @@ export async function checkLayout(browser, origin) {
     const url = new URL(path, origin).href;
     for (const width of [390, 1280]) await checkFirstPaint(browser, url, width);
     await checkLargeText(browser, url);
-    await checkPrivacyWithoutScripts(browser, url);
+    await checkPageWithoutScripts(browser, url);
   }
 }
 
@@ -253,21 +260,18 @@ export async function checkPortraitFooterContrast(browser, origin) {
     try {
       const page = await context.newPage();
       for (const path of pagePaths) {
-        // Exercise both footer messages even if the built artifact already contains live counts.
+        // Exercise missing and published totals even when the build includes a live report.
         const published = viewport.width === 1440;
         await page.route('**/stats.json', route => route.fulfill({
-          json: published ? { visitors: 42, generated: 123, through: '2026-11-24' } : {},
+          json: published ? { visitors: 1, generated: 123, through: '2026-11-24' } : {},
         }), { times: 1 });
         await page.goto(new URL(path, origin).href);
         await page.locator('#sample-content:not([inert])').waitFor();
-        const pending = page.locator('#stats-pending');
         const visitors = page.locator('#stats-visitors');
         const generated = page.locator('#stats-generated');
         const english = path === pagePaths[0];
         if (published) {
-          await expect(visitors).toHaveText(english ? 'About 42 visitors' : '累計訪客約 42 人');
-          await expect(generated).toHaveText(english ? '123 HKIDs generated' : '已生成 123 筆 HKID');
-          await expect(pending).toBeHidden();
+          await expectFooterCounts(page, english, '1', '123');
           const tooltip = english
             ? 'Google Analytics takes time to process data, so these totals may not yet include recent activity.'
             : 'Google Analytics 處理數據需時，最近的統計數據可能尚未計入。';
@@ -276,7 +280,7 @@ export async function checkPortraitFooterContrast(browser, origin) {
             await expect(total).toHaveAttribute('title', tooltip);
           }
         } else {
-          await expect(pending).toBeVisible();
+          await expectFooterCounts(page, english, '—', '—');
           await expect(visitors).toHaveJSProperty('title', '');
           await expect(generated).toHaveJSProperty('title', '');
         }
@@ -299,8 +303,7 @@ export async function checkPortraitFooterContrast(browser, origin) {
           await page.locator('#privacy summary').click();
           if (mode === 'validate') await page.locator('.github-link').hover();
           const ratios = await measureFooterContrast(page);
-          const statusKeys = published ? [] : ['stats-pending'];
-          for (const key of ['stats-visitors', 'stats-generated', ...statusKeys, 'feedbackLink', 'privacy',
+          for (const key of ['stats-visitors', 'stats-generated', 'feedbackLink', 'privacy',
             'privacyLocal', 'privacyAnalytics', 'privacyLink']) {
             const ratio = ratios[key];
             assert.ok(ratio >= 4.5, `${path} ${mode} ${viewport.width}x${viewport.height} ${key}: ${ratio}:1`);
