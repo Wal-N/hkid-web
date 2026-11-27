@@ -27,6 +27,46 @@ async function checkTopEdgeJoin(page, edge) {
   }
 }
 
+async function checkTopOverscroll(page, edge, body) {
+  const base = await body.evaluate(el => getComputedStyle(el).backgroundColor);
+  const top = await edge.evaluate(el => getComputedStyle(el).backgroundColor);
+  const states = await page.evaluate(() => {
+    function paint() {
+      const { backgroundColor, backgroundImage } = getComputedStyle(document.body);
+      return [backgroundColor, backgroundImage];
+    }
+    function touch(type, y) {
+      window.dispatchEvent(Object.assign(new Event(type), { touches: y === undefined ? [] : [{ clientY: y }] }));
+    }
+    const gestures = ['touchend', 'touchcancel'].map(release => {
+      touch('touchstart', 40);
+      touch('touchmove', 65);
+      const beforeRelease = paint();
+      touch(release);
+      return [beforeRelease, paint()];
+    });
+    // Desktop WebKit clamps scrollTo at zero. Feed Safari's offsets to the page's scroll listener.
+    const original = Object.getOwnPropertyDescriptor(window, 'scrollY');
+    try {
+      const bottom = Math.max(0, document.scrollingElement.scrollHeight - innerHeight);
+      const offsets = [-20, 0, -1, 1, bottom].map(y => {
+        Object.defineProperty(window, 'scrollY', { configurable: true, value: y });
+        window.dispatchEvent(new Event('scroll'));
+        return paint();
+      });
+      return { gestures, offsets };
+    } finally {
+      if (original) Object.defineProperty(window, 'scrollY', original);
+      else delete window.scrollY;
+      window.dispatchEvent(new Event('scroll'));
+    }
+  });
+  const pulled = [top, `linear-gradient(${base}, ${base})`];
+  const settled = [base, 'none'];
+  assert.deepEqual(states.gestures, [[pulled, settled], [pulled, settled]]);
+  assert.deepEqual(states.offsets, [pulled, settled, pulled, settled, settled]);
+}
+
 export async function checkMobileTopEdge(browser, origin) {
   const page = await browser.newPage({ ...devices['iPhone 15'], reducedMotion: 'reduce' });
   try {
@@ -44,6 +84,7 @@ export async function checkMobileTopEdge(browser, origin) {
         return rect.top === 0 && rect.left === 0 && rect.right === innerWidth;
       }), `${path} top edge spans the viewport`);
       await checkTopEdgeJoin(page, edge);
+      await checkTopOverscroll(page, edge, body);
 
       await page.evaluate(() => window.scrollTo(0, 1));
       await expect(edge).toBeHidden();
@@ -56,6 +97,7 @@ export async function checkMobileTopEdge(browser, origin) {
       await expect(edge).toHaveCSS('background-color', 'rgb(54, 124, 94)');
       await expect(body).toHaveCSS('background-color', 'rgb(248, 251, 250)');
       await checkTopEdgeJoin(page, edge);
+      await checkTopOverscroll(page, edge, body);
     }
   } finally {
     await page.close();

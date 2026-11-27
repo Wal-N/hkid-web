@@ -40,6 +40,11 @@ body[data-mode="validate"] {
 @media (pointer: coarse) and (scripting: enabled) {
   /* Give Safari a top colour at rest, independently of the light page canvas. */
   body { --top-edge-height: 12px; }
+  body[data-top-pull] {
+    /* Safari reads the solid colour behind the page; the image paints the light footer. */
+    background-color: var(--back-top);
+    background-image: linear-gradient(var(--back-base), var(--back-base));
+  }
   #top-edge {
     display: block;
     position: fixed;

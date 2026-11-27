@@ -348,12 +348,29 @@ window.addEventListener('popstate', syncLocaleWithUrl);
 
 const topEdge = byId('top-edge');
 function syncTopEdge() {
+  const y = window.scrollY;
   // Remove the sampled edge as soon as content scrolls under Safari's status bar.
-  topEdge.toggleAttribute('hidden', window.scrollY > 0);
+  topEdge.toggleAttribute('hidden', y > 0);
+  document.body.toggleAttribute('data-top-pull', y < 0);
 }
 syncTopEdge();
 window.addEventListener('scroll', syncTopEdge, { passive: true });
+window.addEventListener('scrollend', syncTopEdge);
 window.addEventListener('pageshow', syncTopEdge);
+
+// Colour the rubber-band space before Safari reports the first negative scroll offset.
+let previousTouchY = null;
+function trackTopPull(event) {
+  const touchY = event.touches.length === 1 ? event.touches[0].clientY : null;
+  const y = window.scrollY;
+  const crossingTop = event.type === 'touchmove' && touchY !== null && previousTouchY !== null
+    && touchY - previousTouchY > Math.max(0, y);
+  document.body.toggleAttribute('data-top-pull', y < 0 || crossingTop);
+  previousTouchY = touchY;
+}
+for (const type of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) {
+  window.addEventListener(type, trackTopPull, { passive: true });
+}
 
 const privacy = byId('privacy');
 privacy.addEventListener('toggle', () => {
