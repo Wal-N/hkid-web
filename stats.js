@@ -34,8 +34,8 @@ export function renderStats(locale) {
     : `已生成 ${generated} 筆 HKID`;
 
   const delayNotice = english
-    ? 'Google Analytics may still be processing recent visits and HKID generation events.'
-    : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。';
+    ? 'Google Analytics takes time to process data, so these totals may not yet include recent activity.'
+    : 'Google Analytics 處理數據需時，最近的統計數據可能尚未計入。';
   visitorsLabel.title = delayNotice;
   generatedLabel.title = delayNotice;
 }

@@ -269,8 +269,8 @@ export async function checkPortraitFooterContrast(browser, origin) {
           await expect(generated).toHaveText(english ? '123 HKIDs generated' : '已生成 123 筆 HKID');
           await expect(pending).toBeHidden();
           const tooltip = english
-            ? 'Google Analytics may still be processing recent visits and HKID generation events.'
-            : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。';
+            ? 'Google Analytics takes time to process data, so these totals may not yet include recent activity.'
+            : 'Google Analytics 處理數據需時，最近的統計數據可能尚未計入。';
           for (const total of [visitors, generated]) {
             await total.hover();
             await expect(total).toHaveAttribute('title', tooltip);
