@@ -204,6 +204,8 @@ function selectMode(next) {
   clearCopyFeedback();
   mode = next;
   document.body.dataset.mode = mode;
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  themeColor.content = getComputedStyle(document.body).backgroundColor;
   if (switching) byId(`${mode}-status`).append(byId('core-status'));
   for (const name of modes) {
     const selected = mode === name;

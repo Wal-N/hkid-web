@@ -1,7 +1,6 @@
 :root {
   font-family: "Segoe UI", "Noto Sans HK", "PingFang HK", "Microsoft JhengHei", system-ui, sans-serif;
   color: #13263b;
-  background: #f8fafc;
   font-synthesis: none;
   color-scheme: light;
   scrollbar-gutter: stable;
@@ -22,7 +21,9 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   padding-bottom: 54px;
-  background-color: var(--back-base);
+  /* Safari can use the solid canvas colour above the page. Keep the footer light. */
+  background-color: var(--back-top);
+  background-image: linear-gradient(var(--back-base), var(--back-base));
   -webkit-text-size-adjust: 100%;
 }
 
@@ -83,6 +84,17 @@ h1 {
 .tool-backdrop {
   padding-top: 31px;
   background: linear-gradient(to bottom, var(--back-top), var(--back-mid) 27%, var(--back-base) 77%);
+}
+/* iOS Safari extends the solid colour of a fixed top edge behind the clock. */
+@supports (-webkit-touch-callout: none) {
+  .status-bar-edge {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 2;
+    height: 8px;
+    background-color: var(--back-top);
+    pointer-events: none;
+  }
 }
 .layout { width: min(90.5%, 1026px); margin-inline: auto; }
 .toolbar, .surface {
