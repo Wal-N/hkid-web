@@ -45,7 +45,7 @@ test('site builds with analytics disabled, misconfigured or enabled', async t =>
   }
 });
 
-test('daily report precheck requires a valid measurement ID after trimming', () => {
+test('usage report precheck requires a valid measurement ID after trimming', () => {
   for (const [setting, expected] of measurementIds) {
     const result = runScript('measurement-id.mjs', [], setting);
     assert.equal(result.status, expected === null ? 1 : 0, JSON.stringify(setting));

@@ -1,9 +1,9 @@
-name: Update daily usage statistics
+name: Update hourly usage statistics
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 2 * * *' # 10:17 Hong Kong time
+    - cron: '17 * * * *' # At minute 17 of every hour
 
 permissions: {}
 
