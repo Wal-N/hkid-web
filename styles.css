@@ -20,8 +20,8 @@ body {
   margin: 0;
   min-height: 100vh;
   min-height: 100svh;
-  padding-bottom: 54px;
-  /* Safari can use the solid canvas colour above the page. Keep the footer light. */
+  padding-bottom: max(54px, env(safe-area-inset-bottom, 0px));
+  /* Match the canvas above the scroll origin to the start of the gradient. */
   background-color: var(--back-top);
   background-image: linear-gradient(var(--back-base), var(--back-base));
   -webkit-text-size-adjust: 100%;
@@ -82,19 +82,12 @@ h1 {
   white-space: nowrap;
 }
 .tool-backdrop {
-  padding-top: 31px;
+  padding-top: calc(31px + env(safe-area-inset-top, 0px));
   background: linear-gradient(to bottom, var(--back-top), var(--back-mid) 27%, var(--back-base) 77%);
 }
-/* iOS Safari extends the solid colour of a fixed top edge behind the clock. */
-@supports (-webkit-touch-callout: none) {
-  .status-bar-edge {
-    position: fixed;
-    inset: 0 0 auto;
-    z-index: 2;
-    height: 8px;
-    background-color: var(--back-top);
-    pointer-events: none;
-  }
+.tool-backdrop, .site-stats {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 .layout { width: min(90.5%, 1026px); margin-inline: auto; }
 .toolbar, .surface {
@@ -579,8 +572,8 @@ main { margin-top: 21px; }
   .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 43.75em) {
-  body { padding-bottom: 30px; }
-  .tool-backdrop { padding-top: 16px; }
+  body { padding-bottom: max(30px, env(safe-area-inset-bottom, 0px)); }
+  .tool-backdrop { padding-top: calc(16px + env(safe-area-inset-top, 0px)); }
   .layout { width: auto; margin-inline: 12px; }
   .toolbar {
     display: flex;
