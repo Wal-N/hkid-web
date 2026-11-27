@@ -268,8 +268,9 @@ export async function checkPortraitFooterContrast(browser, origin) {
           const english = path === pagePaths[0];
           assert.match(await cutoff.innerText(), english ? /^Through 24\s+\S+\s+2026$/ : /^統計至\s*2026年\s*11月\s*24日$/);
           const tooltip = await cutoff.getAttribute('title');
-          assert.match(tooltip, english ? /Google Analytics may still be processing/ : /Google Analytics 處理數據需時/);
-          assert.match(tooltip, english ? /every hour/ : /每小時/);
+          assert.equal(tooltip, english
+            ? 'Google Analytics may still be processing recent visits and HKID generation events.'
+            : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。');
         } else {
           assert.ok(await cutoff.isHidden());
         }
