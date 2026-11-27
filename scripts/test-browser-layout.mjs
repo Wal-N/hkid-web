@@ -3,6 +3,30 @@ import { devices, expect } from 'playwright/test';
 
 const pagePaths = ['/hkid-web/', '/hkid-web/zh-hk/'];
 
+async function checkTopEdgeJoin(page, edge) {
+  const box = await edge.boundingBox();
+  const clip = { x: 0, y: Math.round(box.y + box.height) - 1, width: Math.floor(box.width), height: 2 };
+  const strip = await page.screenshot({ clip, scale: 'css' });
+  const samples = await page.evaluate(async encoded => {
+    const image = new Image();
+    image.src = 'data:image/png;base64,' + encoded;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0);
+    return [3, Math.floor(image.width / 2), image.width - 4].map(x => {
+      const { data } = ctx.getImageData(x, 0, 1, 2);
+      const delta = [0, 1, 2].map(c => Math.abs(data[c] - data[c + 4]));
+      return { x, delta: Math.max(...delta) };
+    });
+  }, strip.toString('base64'));
+  for (const { x, delta } of samples) {
+    assert.ok(delta <= 3, `Top edge has a ${delta}-level color step at x=${x}, y=${clip.y + 1}`);
+  }
+}
+
 export async function checkMobileTopEdge(browser, origin) {
   const page = await browser.newPage({ ...devices['iPhone 15'], reducedMotion: 'reduce' });
   try {
@@ -19,6 +43,7 @@ export async function checkMobileTopEdge(browser, origin) {
         const rect = element.getBoundingClientRect();
         return rect.top === 0 && rect.left === 0 && rect.right === innerWidth;
       }), `${path} top edge spans the viewport`);
+      await checkTopEdgeJoin(page, edge);
 
       await page.evaluate(() => window.scrollTo(0, 1));
       await expect(edge).toBeHidden();
@@ -30,6 +55,7 @@ export async function checkMobileTopEdge(browser, origin) {
       await expect(edge).toBeVisible();
       await expect(edge).toHaveCSS('background-color', 'rgb(54, 124, 94)');
       await expect(body).toHaveCSS('background-color', 'rgb(248, 251, 250)');
+      await checkTopEdgeJoin(page, edge);
     }
   } finally {
     await page.close();

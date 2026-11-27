@@ -39,12 +39,12 @@ body[data-mode="validate"] {
 #top-edge { display: none; }
 @media (pointer: coarse) and (scripting: enabled) {
   /* Give Safari a top colour at rest, independently of the light page canvas. */
+  body { --top-edge-height: 12px; }
   #top-edge {
     display: block;
     position: fixed;
     inset: 0 0 auto;
-    z-index: 1;
-    height: 12px;
+    height: var(--top-edge-height);
     background-color: var(--back-top);
     pointer-events: none;
   }
@@ -96,7 +96,7 @@ h1 {
 }
 .tool-backdrop {
   padding-top: calc(31px + env(safe-area-inset-top, 0px));
-  background: linear-gradient(to bottom, var(--back-top), var(--back-mid) 27%, var(--back-base) 77%);
+  background: linear-gradient(to bottom, var(--back-top) var(--top-edge-height, 0px), var(--back-mid) 27%, var(--back-base) 77%);
 }
 .tool-backdrop, .site-stats {
   padding-left: env(safe-area-inset-left, 0px);
