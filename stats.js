@@ -15,10 +15,8 @@ export function renderStats(locale) {
   const visitorsLabel = document.getElementById('stats-visitors');
   const generatedLabel = document.getElementById('stats-generated');
   const pending = document.getElementById('stats-pending');
-  const cutoff = document.getElementById('stats-through');
   pending.textContent = english ? 'Statistics pending' : '統計待更新';
   pending.hidden = snapshot !== null;
-  cutoff.hidden = snapshot === null;
   if (!snapshot) {
     visitorsLabel.textContent = english ? 'Visitors —' : '累計訪客 —';
     generatedLabel.textContent = english ? 'HKIDs generated —' : '已生成 HKID —';
@@ -35,14 +33,11 @@ export function renderStats(locale) {
     ? `${generated} ${snapshot.generated === 1 ? 'HKID' : 'HKIDs'} generated`
     : `已生成 ${generated} 筆 HKID`;
 
-  const date = new Intl.DateTimeFormat(english ? 'en-GB' : 'zh-HK', {
-    day: 'numeric', month: english ? 'short' : 'long', year: 'numeric', timeZone: 'UTC',
-  }).format(new Date(snapshot.through + 'T00:00:00Z'));
-  cutoff.dateTime = snapshot.through;
-  cutoff.textContent = english ? `Through ${date}` : `統計至 ${date}`;
-  cutoff.title = english
+  const delayNotice = english
     ? 'Google Analytics may still be processing recent visits and HKID generation events.'
     : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。';
+  visitorsLabel.title = delayNotice;
+  generatedLabel.title = delayNotice;
 }
 
 export async function loadStats() {

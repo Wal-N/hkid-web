@@ -200,7 +200,7 @@ export async function checkLayout(browser, origin) {
 
 async function measureFooterContrast(page) {
   const footer = page.locator('.site-stats');
-  const labels = '.site-stats :is([data-i18n], #stats-through)';
+  const labels = '.site-stats [data-i18n]';
   const hideInk = `${labels} { -webkit-text-fill-color: transparent; text-decoration-color: transparent; }`;
   const capture = async style => (await footer.screenshot({ style, scale: 'css' })).toString('base64');
   // Paint a solid swatch of each label's text color in the second capture.
@@ -260,20 +260,27 @@ export async function checkPortraitFooterContrast(browser, origin) {
         }), { times: 1 });
         await page.goto(new URL(path, origin).href);
         await page.locator('#sample-content:not([inert])').waitFor();
-        const status = published ? 'stats-through' : 'stats-pending';
-        await page.locator('#' + status).waitFor();
-        const cutoff = page.locator('#stats-through');
+        const pending = page.locator('#stats-pending');
+        const visitors = page.locator('#stats-visitors');
+        const generated = page.locator('#stats-generated');
+        const english = path === pagePaths[0];
         if (published) {
-          assert.equal(await cutoff.getAttribute('datetime'), '2026-11-24');
-          const english = path === pagePaths[0];
-          assert.match(await cutoff.innerText(), english ? /^Through 24\s+\S+\s+2026$/ : /^統計至\s*2026年\s*11月\s*24日$/);
-          const tooltip = await cutoff.getAttribute('title');
-          assert.equal(tooltip, english
+          await expect(visitors).toHaveText(english ? 'About 42 visitors' : '累計訪客約 42 人');
+          await expect(generated).toHaveText(english ? '123 HKIDs generated' : '已生成 123 筆 HKID');
+          await expect(pending).toBeHidden();
+          const tooltip = english
             ? 'Google Analytics may still be processing recent visits and HKID generation events.'
-            : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。');
+            : 'Google Analytics 處理數據需時，最近的瀏覽和 HKID 生成次數可能尚未計入。';
+          for (const total of [visitors, generated]) {
+            await total.hover();
+            await expect(total).toHaveAttribute('title', tooltip);
+          }
         } else {
-          assert.ok(await cutoff.isHidden());
+          await expect(pending).toBeVisible();
+          await expect(visitors).toHaveJSProperty('title', '');
+          await expect(generated).toHaveJSProperty('title', '');
         }
+        assert.doesNotMatch(await page.locator('#stats-totals').innerText(), /Through|統計至|2026/);
         for (const mode of ['generate', 'validate']) {
           await page.locator('#tab-' + mode).click();
           const layout = await page.locator('footer.site-stats').evaluate(footer => {
@@ -292,7 +299,8 @@ export async function checkPortraitFooterContrast(browser, origin) {
           await page.locator('#privacy summary').click();
           if (mode === 'validate') await page.locator('.github-link').hover();
           const ratios = await measureFooterContrast(page);
-          for (const key of ['stats-visitors', 'stats-generated', status, 'feedbackLink', 'privacy',
+          const statusKeys = published ? [] : ['stats-pending'];
+          for (const key of ['stats-visitors', 'stats-generated', ...statusKeys, 'feedbackLink', 'privacy',
             'privacyLocal', 'privacyAnalytics', 'privacyLink']) {
             const ratio = ratios[key];
             assert.ok(ratio >= 4.5, `${path} ${mode} ${viewport.width}x${viewport.height} ${key}: ${ratio}:1`);
