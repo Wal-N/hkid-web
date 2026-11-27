@@ -1,9 +1,9 @@
-name: Update hourly usage statistics
+name: Update usage statistics every 30 minutes
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '17 * * * *' # At minute 17 of every hour
+    - cron: '17,47 * * * *'
 
 permissions: {}
 

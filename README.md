@@ -18,4 +18,4 @@ The site checks HKID numbers and generates samples in your browser. It does not 
 
 Google Analytics 4 (GA4) records a page view (`page_view`) when the page loads and a generation event (`hkid_generated`) each time a sample is created, including the automatic first sample. GA4 also receives browser information such as language and screen resolution. It may use cookies to estimate how many people visit. [How Google Analytics collects data](https://support.google.com/analytics/answer/11593727?hl=en)
 
-The footer shows the estimated number of visitors and how many samples GA4 has counted. The site checks for updated totals every hour. Recent visits and generations may take longer to appear while GA4 processes them.
+The footer shows the estimated number of visitors and how many samples GA4 has counted. The site checks for updated totals every 30 minutes. Recent visits and generations may take longer to appear while GA4 processes them.
