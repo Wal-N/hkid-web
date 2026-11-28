@@ -1,9 +1,10 @@
 # Browser core
 
 The local site serves the prebuilt files in `public/core/`. HKID Utilities
-1.2.1 performs the generation, strict validation, card formatting and holder
-summaries in the browser. The adapter receives a Hong Kong reference date and
-seeds each generated card using the browser's Web Crypto API.
+1.3.0 performs the generation, strict validation, card formatting and holder
+summaries in the browser. The adapter passes the Hong Kong reference date to
+the library's card generator, which uses Web Crypto to initialise its random
+number source.
 
 To rebuild the bundle from the repository root with Rust 1.100.0:
 

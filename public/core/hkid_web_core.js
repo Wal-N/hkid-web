@@ -1,27 +1,25 @@
 /**
  * @param {string} date
- * @param {bigint} seed
  * @returns {string}
  */
-export function generate_card(date, seed) {
-    let deferred4_0;
-    let deferred4_1;
+export function generate_card(date) {
+    let deferred3_0;
+    let deferred3_1;
     try {
-        const val2 = BigInt.asIntN(64, seed);
         const ptr0 = passStringToWasm0(date, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.generate_card(ptr0, len0, val2);
-        var ptr3 = ret[0];
-        var len3 = ret[1];
+        const ret = wasm.generate_card(ptr0, len0);
+        var ptr2 = ret[0];
+        var len2 = ret[1];
         if (ret[3]) {
-            ptr3 = 0; len3 = 0;
+            ptr2 = 0; len2 = 0;
             throw takeFromExternrefTable0(ret[2]);
         }
-        deferred4_0 = ptr3;
-        deferred4_1 = len3;
-        return getStringFromWasm0(ptr3, len3);
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
     } finally {
-        wasm.__wbindgen_free(deferred4_0, deferred4_1, 1);
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
     }
 }
 
@@ -65,6 +63,9 @@ function __wbg_get_imports() {
         __wbg___wbindgen_throw_4c88d8bf264fd984: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
+        __wbg_getRandomValues_8b6f1f663e6f188d: function() { return handleError(function (arg0, arg1) {
+            globalThis.crypto.getRandomValues(getArrayU8FromWasm0(arg0, arg1));
+        }, arguments); },
         __wbg_get_2080c49015e35254: function() { return handleError(function (arg0, arg1) {
             const ret = Reflect.get(arg0, arg1);
             return ret;
@@ -109,6 +110,11 @@ function addToExternrefTable0(obj) {
     const idx = wasm.__externref_table_alloc();
     wasm.__wbindgen_externrefs.set(idx, obj);
     return idx;
+}
+
+function getArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
 }
 
 let cachedDataViewMemory0 = null;

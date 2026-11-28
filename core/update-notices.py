@@ -52,6 +52,10 @@ def crate_notices(packages):
         "Rust crates used by the browser target\n\n" + "\n".join(inventory),
         """Additional attributions
 
+HKID Utilities weights generated birthplaces using data from the 2021 Population
+Census, Census and Statistics Department, Hong Kong Special Administrative Region.
+https://www.census2021.gov.hk/en/main_tables.html
+
 HKID Utilities uses Unicode Unihan telegraph mappings for its commercial codes.
 The unicode-general-category, unicode-ident and unicode-script crates use
 Unicode Character Database tables. Copyright © 1991-2026 Unicode, Inc.

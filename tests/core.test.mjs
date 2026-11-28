@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { before, mock, test } from 'node:test';
 import { loadCore, generateCard, validateNumber } from '../public/core/api.js';
 
-// Unmodified conformance/hkid-number.json from the hkid-utils 1.2.1 release.
+// Unmodified conformance/hkid-number.json from the hkid-utils 1.3.0 release.
 const vectors = JSON.parse(await readFile(new URL('./fixtures/hkid-number.json', import.meta.url), 'utf8'));
 
 before(async () => {

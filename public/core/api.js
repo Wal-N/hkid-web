@@ -27,8 +27,7 @@ export function loadCore() {
 }
 
 export function generateCard(date) {
-  const [seed] = crypto.getRandomValues(new BigUint64Array(1));
-  return JSON.parse(bindings.generate_card(date, seed));
+  return JSON.parse(bindings.generate_card(date));
 }
 
 export function validateNumber(input) {

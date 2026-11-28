@@ -4,9 +4,9 @@ use serde_json::json;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn generate_card(date: &str, seed: u64) -> Result<String, JsError> {
+pub fn generate_card(date: &str) -> Result<String, JsError> {
     let reference: NaiveDate = date.parse()?;
-    let card = HkidGenerator::with_seed(seed).card_on(reference, None)?;
+    let card = HkidGenerator::new().card_on(reference, None)?;
     let fields = card.fields();
     let codes: Vec<String> = fields
         .chinese_name
